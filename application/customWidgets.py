@@ -12,17 +12,14 @@ class AutocompleteDropdown(tk.Frame):
 
         # to do: hide/show list box like combobox?
         # self._searchBox.bind('<ButtonPress-1>', self.toggleList)
-        
-        listFrame = tk.Frame(self)
-        listFrame.pack(fill = tk.BOTH)
 
         #creating list box
-        self._lb = tk.Listbox(listFrame)
+        self._lb = tk.Listbox(self)
         self._lb.pack(side = tk.LEFT, fill = tk.BOTH)
         self._lb.bind("<<ListboxSelect>>", self._updateEntry)
 
         # scrollbar for list box
-        self._scrollbar = tk.Scrollbar(listFrame)
+        self._scrollbar = tk.Scrollbar(self)
         self._scrollbar.pack(side = tk.RIGHT, fill = tk.BOTH)
 
         self._lb.config(yscrollcommand = self._scrollbar.set)
@@ -60,14 +57,28 @@ class AutocompleteDropdown(tk.Frame):
             self._lb.insert('end', item)
     
     def config(self, **options):
-        newChoices = options.pop("choices") # autocomplete choices
+        
+        if "choices" in options:
+            self._searchBox.delete(0,tk.END)
+            self._choices =  options.pop("choices") # autocomplete choices
+            self._updateListbox(self._choices)
+        if "state" in options:
+            state = options.pop("state")
+            self._searchBox.config(state=state)
+            if state == "disabled":
+                self._lb.pack_forget()
+                self._scrollbar.pack_forget()
+            elif state == "normal":
+                self._lb.pack(side = tk.LEFT, fill = tk.BOTH)
+                self._scrollbar.pack(side = tk.RIGHT, fill = tk.BOTH)
         tk.Frame.config(self, **options) # check this
-        self._searchBox.delete(0,tk.END)
-        self._choices = newChoices
-        self._updateListbox(self._choices)
+
 
     def get(self):
         return self._searchBox.get()
+
+    def verify(self):
+        return self._searchBox.get() in self._choices
 
 
 class WrapLabel(tk.Label):
@@ -75,3 +86,6 @@ class WrapLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
         tk.Label.__init__(self, master, **kwargs)
         self.bind('<Configure>', lambda e: self.config(wraplength=self.winfo_width()))
+
+# entry with placeholder text?
+# label+entry?
