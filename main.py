@@ -2,6 +2,8 @@ import _tkinter
 import tkinter as tk
 from tkinter import ttk
 
+from customWidgets import AutocompleteDropdown
+
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
@@ -36,8 +38,8 @@ class Application(tk.Frame):
 
         self.entryPtDropdown.bind("<<ComboboxSelected>>", self.setAdditionalOptions)
 
-        self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
-        self.submitButton.pack(padx = 3, pady = 3)
+        # self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
+        # self.submitButton.pack(padx = 3, pady = 3)
 
     def retrieveData(self):
         print("Type: ", self.typeDropdown.get())
@@ -50,68 +52,36 @@ class Application(tk.Frame):
             self.formIDEntry = tk.Entry(self.rightFrame, width = 20)
             self.formIDEntry.insert(0,"Example: ")
             self.formIDEntry.pack(padx = 5, pady = 5)
-            self.getFormButton = tk.Button(self.rightFrame, text = "Go", command = self.getForm)
-            self.getFormButton.pack(padx = 3, pady = 3)
+
+            self.stage = 0
+            self.nextButton = tk.Button(self.bottomFrame, text = "Next", command = self.next)
+            self.nextButton.pack(side = tk.LEFT, padx = 3, pady = 3)
         else:
             try:
                 self.formIDLabel.destroy()
                 self.formIDEntry.destroy()
+                self.scrollbar.destroy()
+                self.lb.destroy()
+                self.listFrame.destroy()
+                self.searchBox.destroy()
+                self.getFormButton.destroy()
             except:
                 pass
     
     def getForm(self):
         formID = self.formIDEntry.get()
         self.questions = ['C','C++','Java', 'Python','Perl',
-                            'PHP','ASP','JS', 'test2', 'test3', 
+                               'PHP','ASP','JS', 'test2', 'test3', 
                             'test1', 'test4', 'test5', 'test6' ] # get list of questions from formID
-        #creating text box 
-        self.searchBox = tk.Entry(self.leftFrame)
+        self.searchBox = AutocompleteDropdown(self.leftFrame, choices=self.questions)
         self.searchBox.pack()
-        self.searchBox.bind('<KeyRelease>', self.checkkey)
-        # to do: hide/show list box like combobox
-        self.searchBox.bind('<ButtonPress-1>', self.toggleList)
-        
-        #creating list box
-        self.listFrame = tk.Frame(self.leftFrame)
-        self.listFrame.pack(fill = tk.BOTH)
-        self.lb = tk.Listbox(self.listFrame)
-        self.lb.pack(side = tk.LEFT, fill = tk.BOTH)
-        self.lb.bind("<<ListboxSelect>>", self.updateQuestionSelected)
-        self.scrollbar = tk.Scrollbar(self.listFrame)
-        self.scrollbar.pack(side = tk.RIGHT, fill = tk.BOTH)
-        self.lb.config(yscrollcommand = self.scrollbar.set)
-        self.scrollbar.config(command = self.lb.yview)
 
-        self.updateListbox(self.questions)
-
-    def checkkey(self, event):
-        value = self.searchBox.get()
-        if value == '':
-            data = self.questions
-        else:
-            data = []
-            for item in self.questions:
-                if value.lower() in item.lower():
-                    data.append(item)
-        # update data in listbox
-        self.updateListbox(data)
-   
-    def toggleList(self, event):
-        print(event)
-   
-    def updateListbox(self, data):
-        # clear previous data
-        self.lb.delete(0, 'end')
-        # put new data
-        for item in data:
-            self.lb.insert('end', item)
-    
-    def updateQuestionSelected(self, event):
-        selection = self.lb.curselection()
-        if selection:
-            self.searchBox.delete(0,tk.END)
-            self.searchBox.insert(0,self.lb.get(selection))
-        self.checkkey(None)
+    def next(self):
+        if self.stage == 0: # submit question id; get specific typeform questions and ask specific form info
+            self.getForm()
+        elif self.stage == 1: # submit specific form submission; ask what field to change
+            return
+        self.stage += 1
 
 
 root = tk.Tk()
