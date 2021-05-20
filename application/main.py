@@ -47,7 +47,7 @@ class Application(tk.Frame):
         self.entryPtDropdown.bind("<<ComboboxSelected>>", self.setAdditionalOptions)
 
         self.stage = 0
-        self.nextFunc = [self.askForSubmission, self.askForSubmissionChange]
+        self.nextFunc = [self.askForSubmissionQ, self.askForSubmissionA, self.askForChangeQ, self.askForChangeA]
         # self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
         # self.submitButton.pack(padx = 3, pady = 3)
 
@@ -86,7 +86,7 @@ class Application(tk.Frame):
             self.nextFunc[self.stage]()
             self.stage += 1
     
-    def askForSubmission(self):
+    def askForSubmissionQ(self):
         formID = self.formIDEntry.get()
 
         self.stageText = WrapLabel(self.leftFrame, 
@@ -99,12 +99,34 @@ class Application(tk.Frame):
         self.searchBox = AutocompleteDropdown(self.rightFrame, choices=questions)
         self.searchBox.pack(padx = 5, pady = 5)
         
-    def askForSubmissionChange(self):
+    def askForSubmissionA(self):
         question = self.searchBox.get()
         # get responses to chosen question...
         responses = ['a', 'b', 'c']
         self.searchBox.config(choices=responses)
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the response:")
+
+    def askForChangeQ(self):
+        answer = self.searchBox.get()
+        # get specific submission based on question and answer
+        # ask user to choose question of the answer field they want to change
+        questions = ['C','C++','Java', 'Python','Perl',
+                               'PHP','JS','test2', 'test3', 
+                            'test1', 'test4', 'test5', 'test6' ] # get list of questions from formID
+        self.searchBox.config(choices=questions)
+        self.stageText.config(text="Choose question field to change")
+
+    def askForChangeA(self):
+        question = self.searchBox.get()
+        # get current answer to display
+        self.searchBox.destroy()
+        self.formIDEntry = tk.Entry(self.rightFrame, width = 20)
+        self.formIDEntry.insert(0,"Current response")
+        self.formIDEntry.pack(padx = 5, pady = 5)
+        self.stageText.config(text="Change response to:")
+
+    # To do: use API, confirmation, back buttons, save data to json
+
 
 root = tk.Tk()
 app = Application(master=root)

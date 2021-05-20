@@ -66,6 +66,9 @@ class AutocompleteDropdown(tk.Frame):
         self._choices = newChoices
         self._updateListbox(self._choices)
 
+    def get(self):
+        return self._searchBox.get()
+
 
 class WrapLabel(tk.Label):
     # automatically adjusts text wrapping with window resize
