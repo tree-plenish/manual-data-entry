@@ -2,7 +2,7 @@ import tkinter as tk
 
 class AutocompleteDropdown(tk.Frame):
     def __init__(self, parent, **options):
-        self.choices = options.pop("choices") # autocomplete choices
+        self._choices = options.pop("choices") # autocomplete choices
         tk.Frame.__init__(self, parent, **options)
 
         #creating text box 
@@ -28,16 +28,16 @@ class AutocompleteDropdown(tk.Frame):
         self._lb.config(yscrollcommand = self._scrollbar.set)
         self._scrollbar.config(command = self._lb.yview)
 
-        self._updateListbox(self.choices)
+        self._updateListbox(self._choices)
     
     def _checkkey(self, event):
         # update choices whenever user types in entry
         value = self._searchBox.get()
         if value == '':
-            data = self.choices
+            data = self._choices
         else:
             data = []
-            for item in self.choices:
+            for item in self._choices:
                 if value.lower() in item.lower():
                     data.append(item)
         # update data in listbox
@@ -58,3 +58,17 @@ class AutocompleteDropdown(tk.Frame):
         # put new data
         for item in data:
             self._lb.insert('end', item)
+    
+    def config(self, **options):
+        newChoices = options.pop("choices") # autocomplete choices
+        tk.Frame.config(self, **options) # check this
+        self._searchBox.delete(0,tk.END)
+        self._choices = newChoices
+        self._updateListbox(self._choices)
+
+
+class WrapLabel(tk.Label):
+    # automatically adjusts text wrapping with window resize
+    def __init__(self, master=None, **kwargs):
+        tk.Label.__init__(self, master, **kwargs)
+        self.bind('<Configure>', lambda e: self.config(wraplength=self.winfo_width()))
