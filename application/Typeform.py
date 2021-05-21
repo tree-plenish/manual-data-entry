@@ -139,9 +139,54 @@ class Typeform:
         
         return answers, answer_ids, md
 
+    def find_matching_form(self, form_id, question_id):
+
+        # Gets 1 answer response (we can pull sample answers)
+        # Should probably make this class var so it isn't run twice
+        # Maybe even run it in itit... though that would slow down tkinter boot
+        result = requests.get("https://api.typeform.com/forms/" + form_id + "/responses", params={"page_size": 1000},
+                                  headers=self.headers)
+
+        # Asserting successful request
+        assert (result.status_code == 200), "A " + str(result.status_code) + " error occurred"
+        
+        # Getting answers response as a dict
+        all_responses = result.json()
+
+        # Looping thorough each response, recording answer to the question
+        num_responses = all_responses["total_items"]
+
+        # Looping through responses getting the answer to the chosen question
+        possible_answers = [] 
+        for response in all_responses["items"]:
+
+            # Getting answer content
+            answers = response["answers"]
+
+            # For each response get the index of the chosen question
+            chosen_index = None
+            for answer_num in range(len(answers)):
+
+                answer_id = answers[answer_num]["field"]["id"]
+                if answer_id == question_id:
+
+                    chosen_index = answer_num
+                    break
+
+            # Make sure we found our index
+            assert (answer_num is not None), "ID Error, no answer found for question id"
+
+            
+            answer_content = answers[chosen_index]
+            possible_answers.append(answer_content[answer_content["type"]])
+            
+        return possible_answers
+
+
 # t = Typeform()
 # questions, question_type, question_choices, question_ids = t.get_questions("VUkfEM0w")
 # answers, answer_ids, md = t.get_answers("VUkfEM0w")
+# possible_answers = t.find_matching_form("VUkfEM0w", question_ids[3]) # the question id points to the email 
 """
 # EXAMPLE CALLS
 # init()... will run on import
@@ -162,4 +207,12 @@ questions, question_type, question_choices, question_ids = t.get_questions(form_
 # Getting list of answers in a form id
 answers, answer_ids, md = t.get_questions(form_id) # form_id can be found from the forms dict
 
+# Getting a list of possible answers to a question to use as an identifier
+possible_answers = t.find_matching_form(form_id, question_id) # the question id points to the email 
+
+
+# OTHER NOTES
+# I've been building this around question ids a lot because some people answers
+# may be left blank, potentially screwing up indexing. Try to always reference
+# to the id when working between questions and answers.
 """
