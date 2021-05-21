@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 
-
+from Typeform import Typeform
 from customWidgets import AutocompleteDropdown, WrapLabel
 
 class Application(tk.Frame):
@@ -36,19 +36,19 @@ class Application(tk.Frame):
 
         self.emailLabel = tk.Label(self.leftFrame, text = "Enter your email" )
         self.emailLabel.pack(padx = 3, pady = 3)
-        self.emailEntry = tk.Entry(self.rightFrame)
+        self.emailEntry = tk.Entry(self.rightFrame, width=50)
         # self.emailEntry.insert(0,"Example: ")
         self.emailEntry.pack(padx = 5, pady = 5)
 
 
         self.typeLabel = tk.Label(self.leftFrame, text = "Select Data Entry Type" )
         self.typeLabel.pack(padx = 3, pady = 3)
-        self.typeDropdown = ttk.Combobox(self.rightFrame, state = "readonly", values = ["Add", "Delete", "Modify"])
+        self.typeDropdown = ttk.Combobox(self.rightFrame, width=50, state = "readonly", values = ["Add", "Delete", "Modify"])
         self.typeDropdown.pack(padx = 3, pady = 3)
         
         self.entryPtLabel = tk.Label(self.leftFrame, text = "Select Entry Point" )
         self.entryPtLabel.pack(padx = 3, pady = 3)
-        self.entryPtDropdown = ttk.Combobox(self.rightFrame, state = "readonly", values = ["Typeform", "Other"])
+        self.entryPtDropdown = ttk.Combobox(self.rightFrame, width=50, state = "readonly", values = ["Typeform", "Other"])
         self.entryPtDropdown.pack(padx = 3, pady = 3)
 
         self.entryPtDropdown.bind("<<ComboboxSelected>>", self.setAdditionalOptions)
@@ -77,13 +77,14 @@ class Application(tk.Frame):
             self.emailEntry.config(state="disabled")
             self.typeDropdown.config(state="disabled")
 
+            self.typeform = Typeform()
             # initialize typeform related widgets
             self.stageText = WrapLabel(self.leftFrame, text="")
-            self.formIDBox = AutocompleteDropdown(self.rightFrame, choices=[])
-            self.submissionQBox = AutocompleteDropdown(self.rightFrame, choices=[])
-            self.submissionABox = AutocompleteDropdown(self.rightFrame, choices=[])
-            self.changeQBox = AutocompleteDropdown(self.rightFrame, choices=[])
-            self.changeABox = tk.Entry(self.rightFrame, width = 20)
+            self.formIDBox = AutocompleteDropdown(self.rightFrame,width = 50, choices=[])
+            self.submissionQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
+            self.submissionABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
+            self.changeQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
+            self.changeABox = tk.Entry(self.rightFrame, width = 50)
             self.fields = [self.formIDBox, self.submissionQBox, self.submissionABox, self.changeQBox, self.changeABox]
             self.nextStage()
 
@@ -132,10 +133,11 @@ class Application(tk.Frame):
     def askForFormID(self):
         self.stageText.config(text="Enter Typeform ID")
         self.stageText.pack(padx = 3, pady = 3, fill="both", expand=True)
-
-        formIDs = ['1','2','3','4','5','6','4574','2124' ] # get list of form IDs
-        self.formIDBox.config(choices=formIDs)
-        self.formIDBox.pack(padx = 5, pady = 5)
+        forms = []
+        for form in self.typeform.get_all_forms():
+            forms.append(form["title"] + ", " + form["id"])
+        self.formIDBox.config(choices=forms)
+        self.formIDBox.pack(padx = 5, pady = 5, fill="both", expand=True)
 
     def askForSubmissionQ(self):
         formID = self.formIDBox.get()        
@@ -144,7 +146,7 @@ class Application(tk.Frame):
                                'PHP','JS','test2', 'test3', 
                             'test1', 'test4', 'test5', 'test6' ] # get list of questions from formID
         self.submissionQBox.config(choices=self.questions)
-        self.submissionQBox.pack(padx = 5, pady = 5)
+        self.submissionQBox.pack(padx = 5, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the question:")
 
         
@@ -154,7 +156,7 @@ class Application(tk.Frame):
         responses = ['a', 'b', 'c']
                 
         self.submissionABox.config(choices=responses)
-        self.submissionABox.pack(padx = 5, pady = 5)
+        self.submissionABox.pack(padx = 5, pady = 5, fill="both", expand=True)
         
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the response:")
 
@@ -164,7 +166,7 @@ class Application(tk.Frame):
         # ask user to choose question of the answer field they want to change
         
         self.changeQBox.config(choices=self.questions)
-        self.changeQBox.pack(padx = 5, pady = 5)
+        self.changeQBox.pack(padx = 5, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Choose question field to change")
 
     def askForChangeA(self):
@@ -172,7 +174,7 @@ class Application(tk.Frame):
         # get current answer to display
                 
         self.changeABox.insert(0,"Current response")
-        self.changeABox.pack(padx = 5, pady = 5)
+        self.changeABox.pack(padx = 5, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Change response to:")
 
         self.nextButton.config(text="Submit", command=self.submit)

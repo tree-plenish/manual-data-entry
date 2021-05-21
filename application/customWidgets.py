@@ -15,7 +15,7 @@ class AutocompleteDropdown(tk.Frame):
 
         #creating list box
         self._lb = tk.Listbox(self)
-        self._lb.pack(side = tk.LEFT, fill = tk.BOTH)
+        self._lb.pack(side = tk.LEFT, fill = tk.BOTH, expand=True)
         self._lb.bind("<<ListboxSelect>>", self._updateEntry)
 
         # scrollbar for list box
@@ -26,6 +26,8 @@ class AutocompleteDropdown(tk.Frame):
         self._scrollbar.config(command = self._lb.yview)
 
         self._updateListbox(self._choices)
+
+        # self.pack_propagate(0)
     
     def _checkkey(self, event):
         # update choices whenever user types in entry
