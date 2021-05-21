@@ -19,7 +19,7 @@ class Application(tk.Frame):
         self.mainContent = tk.Frame(self.master)
         self.mainContent.pack()
         self.mainContent.grid_columnconfigure(0, weight=1, uniform="group1")
-        self.mainContent.grid_columnconfigure(1, weight=1, uniform="group1")
+        self.mainContent.grid_columnconfigure(1, weight=2, uniform="group1")
         self.mainContent.grid_rowconfigure(0, weight=1)
 
         self.leftFrame = tk.Frame(self.mainContent)
@@ -35,21 +35,21 @@ class Application(tk.Frame):
         self.label.pack()
 
         self.emailLabel = tk.Label(self.leftFrame, text = "Enter your email" )
-        self.emailLabel.pack(padx = 3, pady = 3)
-        self.emailEntry = tk.Entry(self.rightFrame, width=50)
+        self.emailLabel.pack(padx = 5, pady = 5)
+        self.emailEntry = tk.Entry(self.rightFrame, width=100)
         # self.emailEntry.insert(0,"Example: ")
-        self.emailEntry.pack(padx = 5, pady = 5)
+        self.emailEntry.pack(padx = 20, pady = 5)
 
 
         self.typeLabel = tk.Label(self.leftFrame, text = "Select Data Entry Type" )
         self.typeLabel.pack(padx = 3, pady = 3)
-        self.typeDropdown = ttk.Combobox(self.rightFrame, width=50, state = "readonly", values = ["Add", "Delete", "Modify"])
-        self.typeDropdown.pack(padx = 3, pady = 3)
+        self.typeDropdown = ttk.Combobox(self.rightFrame, state = "readonly", values = ["Add", "Delete", "Modify"])
+        self.typeDropdown.pack(padx = 20, pady = 3, fill="both", expand=True)
         
         self.entryPtLabel = tk.Label(self.leftFrame, text = "Select Entry Point" )
         self.entryPtLabel.pack(padx = 3, pady = 3)
-        self.entryPtDropdown = ttk.Combobox(self.rightFrame, width=50, state = "readonly", values = ["Typeform", "Other"])
-        self.entryPtDropdown.pack(padx = 3, pady = 3)
+        self.entryPtDropdown = ttk.Combobox(self.rightFrame, state = "readonly", values = ["Typeform", "Other"])
+        self.entryPtDropdown.pack(padx = 20, pady = 3, fill="both", expand=True)
 
         self.entryPtDropdown.bind("<<ComboboxSelected>>", self.setAdditionalOptions)
 
@@ -137,7 +137,7 @@ class Application(tk.Frame):
         for form in self.typeform.get_all_forms():
             forms.append(form["title"] + ", " + form["id"])
         self.formIDBox.config(choices=forms)
-        self.formIDBox.pack(padx = 5, pady = 5, fill="both", expand=True)
+        self.formIDBox.pack(padx = 20, pady = 5, fill="both", expand=True)
 
     def askForSubmissionQ(self):
         formID = self.formIDBox.get()        
@@ -146,7 +146,7 @@ class Application(tk.Frame):
                                'PHP','JS','test2', 'test3', 
                             'test1', 'test4', 'test5', 'test6' ] # get list of questions from formID
         self.submissionQBox.config(choices=self.questions)
-        self.submissionQBox.pack(padx = 5, pady = 5, fill="both", expand=True)
+        self.submissionQBox.pack(padx = 20, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the question:")
 
         
@@ -156,7 +156,7 @@ class Application(tk.Frame):
         responses = ['a', 'b', 'c']
                 
         self.submissionABox.config(choices=responses)
-        self.submissionABox.pack(padx = 5, pady = 5, fill="both", expand=True)
+        self.submissionABox.pack(padx = 20, pady = 5, fill="both", expand=True)
         
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the response:")
 
@@ -174,7 +174,7 @@ class Application(tk.Frame):
         # get current answer to display
                 
         self.changeABox.insert(0,"Current response")
-        self.changeABox.pack(padx = 5, pady = 5, fill="both", expand=True)
+        self.changeABox.pack(padx = 20, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Change response to:")
 
         self.nextButton.config(text="Submit", command=self.submit)
