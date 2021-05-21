@@ -135,7 +135,9 @@ class Typeform:
         
         return answers, answer_ids, md
 
-
+# t = Typeform()
+# questions, question_type, question_choices, question_ids = t.get_questions("VUkfEM0w")
+# answers, answer_ids, md = t.get_questions("VUkfEM0w")
 """
 # EXAMPLE CALLS
 # init()... will run on import
@@ -151,6 +153,9 @@ forms = t.get_all_forms()
 titles = t.get_form_titles(forms)
 
 # Getting list of questions in a form id
-questions, question_ids = t.get_questions(form_id) # form_id can be found from the forms dict
+questions, question_type, question_choices, question_ids = t.get_questions(form_id) # form_id can be found from the forms dict
+
+# Getting list of answers in a form id
+answers, answer_ids, md = t.get_questions(form_id) # form_id can be found from the forms dict
 
 """
