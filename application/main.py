@@ -153,7 +153,7 @@ class Application(tk.Frame):
         self.md["formID"] = formID
         
         # Returns list of questions with list of answers from typeform
-        self.questions, question_ids = self.typeform.get_questions(formID) # get list of questions from formID
+        self.questions, question_type, question_choices, question_ids = self.typeform.get_questions(formID) # get list of questions from formID
 
         self.submissionQBox.config(choices=self.questions)
         self.submissionQBox.pack(padx = 5, pady = 5, fill="both", expand=True)
