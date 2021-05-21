@@ -123,8 +123,12 @@ class Typeform:
 
             # Answer handling... some mc questions give labeled answers
             answer = response[response_type]
+            
             if type(answer) is dict:
-                answer = answer["label"]
+                try:
+                    answer = answer["label"]
+                except:
+                    answer = "Type Issue: May be payment confirmation"
                 
             answers.append(answer)
             answer_ids.append(response["field"]["id"])
@@ -137,7 +141,7 @@ class Typeform:
 
 # t = Typeform()
 # questions, question_type, question_choices, question_ids = t.get_questions("VUkfEM0w")
-# answers, answer_ids, md = t.get_questions("VUkfEM0w")
+# answers, answer_ids, md = t.get_answers("VUkfEM0w")
 """
 # EXAMPLE CALLS
 # init()... will run on import
