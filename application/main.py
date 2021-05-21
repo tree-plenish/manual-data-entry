@@ -40,7 +40,7 @@ class Application(tk.Frame):
 
         self.emailLabel = tk.Label(self.leftFrame, text = "Enter your email" )
         self.emailLabel.pack(padx = 5, pady = 5)
-        self.emailEntry = tk.Entry(self.rightFrame, width=100)
+        self.emailEntry = tk.Entry(self.rightFrame, width=300)
         # self.emailEntry.insert(0,"Example: ")
         self.emailEntry.pack(padx = 20, pady = 5)
 
@@ -59,6 +59,7 @@ class Application(tk.Frame):
 
         self.stage = -1
         self.nextFunc = [self.askForFormID, self.askForSubmissionQ, self.askForSubmissionA, self.askForChangeQ, self.askForChangeA, self.submit]
+        self.fields = []
         # self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
         # self.submitButton.pack(padx = 3, pady = 3)        
 
@@ -69,19 +70,19 @@ class Application(tk.Frame):
             return
 
         if self.entryPtDropdown.get() == "Typeform":
-            if self.stage == -1:
-                self.prevButton = tk.Button(self.bottomFrame, text = "Back", command = self.prevStage)
-                self.prevButton.pack(side = tk.LEFT, padx = 3, pady = 3)
-                self.nextButton = tk.Button(self.bottomFrame, text = "Next", command = self.nextStage)
-                self.nextButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
-            else:
-                self.stage = -1
 
             self.entryPtDropdown.config(state="disabled")
             self.emailEntry.config(state="disabled")
             self.typeDropdown.config(state="disabled")
 
             self.typeform = Typeform()
+
+            self.prevButton = tk.Button(self.bottomFrame, text = "Back", command = self.prevStage)
+            self.prevButton.pack(side = tk.LEFT, padx = 3, pady = 3)
+            self.nextButton = tk.Button(self.bottomFrame, text = "Next", command = self.nextStage)
+            self.nextButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
+
+
             # initialize typeform related widgets
             self.stageText = WrapLabel(self.leftFrame, text="")
             self.formIDBox = AutocompleteDropdown(self.rightFrame,width = 50, choices=[])
@@ -90,6 +91,7 @@ class Application(tk.Frame):
             self.changeQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
             self.changeABox = tk.Entry(self.rightFrame, width = 50)
             self.fields = [self.formIDBox, self.submissionQBox, self.submissionABox, self.changeQBox, self.changeABox]
+            
             self.nextStage()
 
 
@@ -153,7 +155,8 @@ class Application(tk.Frame):
         self.md["formID"] = formID
         
         # Returns list of questions with list of answers from typeform
-        self.questions, question_type, question_choices, question_ids = self.typeform.get_questions(formID) # get list of questions from formID
+        self.questions, self.question_type, self.question_choices, question_ids = self.typeform.get_questions(formID) # get list of questions from formID
+        print(self.question_type)
 
         self.submissionQBox.config(choices=self.questions)
         self.submissionQBox.pack(padx = 20, pady = 5, fill="both", expand=True)
@@ -180,12 +183,17 @@ class Application(tk.Frame):
         self.stageText.config(text="Choose question field to change")
 
     def askForChangeA(self):
-        question = self.changeQBox.get()
-        # get current answer to display
-                
-        self.changeABox.insert(0,"Current response")
+        q = self.changeQBox.get()
+        q_type = self.question_type[self.questions.index(q)]
+        
+        if q_type == 'multiple_choice':
+            self.changeABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=self.question_choices[self.questions.index(q)])
+            
+        # get current answer to display?
+        # self.changeABox.insert(0,"Current response")
+
         self.changeABox.pack(padx = 20, pady = 5, fill="both", expand=True)
-        self.stageText.config(text="Change response to:")
+        self.stageText.config(text="Change response to (response type is " + q_type + "):")
 
         self.nextButton.config(text="Submit", command=self.submit)
 
@@ -206,7 +214,6 @@ class Application(tk.Frame):
         self.confirmation = WrapLabel(self.master, 
                                     text="Change request received. You will receive an email at " + request["email"] + " once the change is processed.")
         self.confirmation.pack(fill="both", expand=True)
-    # To do: use API, confirmation, submit and save data to json
 
 
 root = tk.Tk()
