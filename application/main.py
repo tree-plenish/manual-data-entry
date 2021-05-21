@@ -15,6 +15,10 @@ class Application(tk.Frame):
         self.pack()
         self.create_widgets()
 
+        # Setting class variables for request md and data
+        self.md = {}
+        self.data = {}
+
     def create_widgets(self):
         self.mainContent = tk.Frame(self.master)
         self.mainContent.pack()
@@ -140,11 +144,17 @@ class Application(tk.Frame):
         self.formIDBox.pack(padx = 20, pady = 5, fill="both", expand=True)
 
     def askForSubmissionQ(self):
-        formID = self.formIDBox.get()        
+        formID = self.formIDBox.get()
 
-        self.questions = ['C','C++','Java', 'Python','Perl',
-                               'PHP','JS','test2', 'test3', 
-                            'test1', 'test4', 'test5', 'test6' ] # get list of questions from formID
+        # Setting form ID as just the id code used in typeform api
+        formID = formID.split(", ")[-1]
+
+        # Updating metadata
+        self.md["formID"] = formID
+        
+        # Returns list of questions with list of answers from typeform
+        self.questions, question_type, question_choices, question_ids = self.typeform.get_questions(formID) # get list of questions from formID
+
         self.submissionQBox.config(choices=self.questions)
         self.submissionQBox.pack(padx = 20, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the question:")

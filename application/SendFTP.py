@@ -28,7 +28,10 @@ class HandleFTP:
             key_file = "/home/justinmiller/Desktop/ip.txt"
 
         else:
-            key_file = input("Enter full address of api key text file")
+            key_file = input("Enter full address of api key text file: ")
+
+
+        #input("Press enter to confirm ip address: ")
 
         # Input my password
         self.user = input("Enter User Name: ")
@@ -64,6 +67,11 @@ class HandleFTP:
         # TODO (OPTIONAL)... add email to filename instead of just timestamp
         file_name = self.time_requested + ".json"
 
+        ftp = ftplib.FTP()
+        ftp.connect(self.server_ip, 21)
+        ftp.login(self.user, self.password)
+        ftp.set_pasv(False)
+        
         # Moving to path location
         ftp.cwd(path)
 
@@ -84,4 +92,4 @@ class HandleFTP:
 
 # Example Call (Full Functionality)     
 obj = HandleFTP()
-obj.transfer_request({"Name":"Example Request", "Request Number" : 0})
+obj.transfer_request({"Name":"First Remote Request", "Request Number" : 1})
