@@ -23,9 +23,7 @@ class Application(tk.Frame):
         self.mainContent.grid_rowconfigure(0, weight=1)
 
         self.leftFrame = tk.Frame(self.mainContent)
-        # self.leftFrame.pack(side=tk.LEFT, anchor=tk.NE)
         self.rightFrame = tk.Frame(self.mainContent)
-        # self.rightFrame.pack(side=tk.RIGHT, anchor=tk.NW)
 
         self.leftFrame.grid(row=0, column=0, sticky="nsew")
         self.rightFrame.grid(row=0, column=1, sticky="nsew")
@@ -56,15 +54,16 @@ class Application(tk.Frame):
         self.entryPtDropdown.bind("<<ComboboxSelected>>", self.setAdditionalOptions)
 
         self.stage = -1
-        self.nextFunc = [self.askForFormID, self.askForSubmissionQ, self.askForSubmissionA, self.askForChangeQ, self.askForChangeA]
+        self.nextFunc = [self.askForFormID, self.askForSubmissionQ, self.askForSubmissionA, self.askForChangeQ, self.askForChangeA, self.submit]
         # self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
-        # self.submitButton.pack(padx = 3, pady = 3)
-
-    def retrieveData(self):
-        print("Type: ", self.typeDropdown.get())
-        print("Entry Point: ", self.entryPtDropdown.get())
+        # self.submitButton.pack(padx = 3, pady = 3)        
 
     def setAdditionalOptions(self, event):
+        if self.entryPtDropdown.get() == "" or self.emailEntry.get() == "" or self.typeDropdown.get() == "":
+            messagebox.showerror("Error", "Please fill in all required fields")
+            # to do: email validation?
+            return
+
         if self.entryPtDropdown.get() == "Typeform":
             if self.stage == -1:
                 self.prevButton = tk.Button(self.bottomFrame, text = "Back", command = self.prevStage)
@@ -73,6 +72,10 @@ class Application(tk.Frame):
                 self.nextButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
             else:
                 self.stage = -1
+
+            self.entryPtDropdown.config(state="disabled")
+            self.emailEntry.config(state="disabled")
+            self.typeDropdown.config(state="disabled")
 
             # initialize typeform related widgets
             self.stageText = WrapLabel(self.leftFrame, text="")
@@ -104,7 +107,7 @@ class Application(tk.Frame):
             if isinstance(self.fields[self.stage], AutocompleteDropdown):
                 if not self.fields[self.stage].verify():
                     # pop up error
-                    tk.messagebox.showerror("Error", "Please select one of the options listed.")
+                    messagebox.showerror("Error", "Please select one of the options listed.")
                     return
             self.stage += 1
             self.nextFunc[self.stage]()
@@ -128,7 +131,7 @@ class Application(tk.Frame):
 
     def askForFormID(self):
         self.stageText.config(text="Enter Typeform ID")
-        self.stageText.pack(padx = 3, pady = 3)
+        self.stageText.pack(padx = 3, pady = 3, fill="both", expand=True)
 
         formIDs = ['1','2','3','4','5','6','4574','2124' ] # get list of form IDs
         self.formIDBox.config(choices=formIDs)
@@ -172,6 +175,25 @@ class Application(tk.Frame):
         self.changeABox.pack(padx = 5, pady = 5)
         self.stageText.config(text="Change response to:")
 
+        self.nextButton.config(text="Submit", command=self.submit)
+
+    def submit(self):
+        request = {
+            "email" : self.emailEntry.get(),
+            "type" : self.typeDropdown.get(),
+            "entry_point" : self.entryPtDropdown.get(),
+            "form_id" : self.formIDBox.get(),
+            "submission_q" : self.submissionQBox.get(),
+            "submission_a" : self.submissionABox.get(),
+            "change_q" : self.changeQBox.get(),
+            "change_a" : self.changeABox.get()
+        }
+        print(request)
+        self.mainContent.destroy()
+        self.bottomFrame.destroy()
+        self.confirmation = WrapLabel(self.master, 
+                                    text="Change request received. You will receive an email at " + request["email"] + " once the change is processed.")
+        self.confirmation.pack(fill="both", expand=True)
     # To do: use API, confirmation, submit and save data to json
 
 
