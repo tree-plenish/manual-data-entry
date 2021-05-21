@@ -155,8 +155,7 @@ class Application(tk.Frame):
         self.md["formID"] = formID
         
         # Returns list of questions with list of answers from typeform
-        self.questions, self.question_type, self.question_choices, question_ids = self.typeform.get_questions(formID) # get list of questions from formID
-        print(self.question_type)
+        self.questions, self.question_type, self.question_choices, self.question_ids = self.typeform.get_questions(formID) # get list of questions from formID
 
         self.submissionQBox.config(choices=self.questions)
         self.submissionQBox.pack(padx = 20, pady = 5, fill="both", expand=True)
@@ -164,10 +163,12 @@ class Application(tk.Frame):
 
         
     def askForSubmissionA(self):
-        question = self.submissionQBox.get()
-        # get responses to chosen question...
-        responses = ['a', 'b', 'c']
-                
+        qIndex = self.questions.index(self.submissionQBox.get())
+        qID = self.question_ids[qIndex]
+        qType = self.question_type[qIndex]
+
+        # get responses to chosen question
+        responses = self.typeform.find_matching_form(self.md["formID"], qID)
         self.submissionABox.config(choices=responses)
         self.submissionABox.pack(padx = 20, pady = 5, fill="both", expand=True)
         
@@ -183,17 +184,18 @@ class Application(tk.Frame):
         self.stageText.config(text="Choose question field to change")
 
     def askForChangeA(self):
-        q = self.changeQBox.get()
-        q_type = self.question_type[self.questions.index(q)]
+        qIndex = self.questions.index(self.changeQBox.get())
+        qID = self.question_ids[qIndex]
+        qType = self.question_type[qIndex]
         
-        if q_type == 'multiple_choice':
-            self.changeABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=self.question_choices[self.questions.index(q)])
+        if qType == 'multiple_choice':
+            self.changeABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=self.question_choices[qIndex])
             
         # get current answer to display?
         # self.changeABox.insert(0,"Current response")
 
         self.changeABox.pack(padx = 20, pady = 5, fill="both", expand=True)
-        self.stageText.config(text="Change response to (response type is " + q_type + "):")
+        self.stageText.config(text="Change response to (response type is " + qType + "):")
 
         self.nextButton.config(text="Submit", command=self.submit)
 
