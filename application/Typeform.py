@@ -11,7 +11,7 @@ class Typeform:
             key_file = "/home/justinmiller/Desktop/typeformId.txt"
 
         else:
-            key_file = input("Enter full address of api key text file")
+            key_file = input("Enter full address of api key text file: ")
 
 
         # Loading key into workspace [removing ending whitespace if applicable]
@@ -155,9 +155,10 @@ class Typeform:
 
         # Looping thorough each response, recording answer to the question
         num_responses = all_responses["total_items"]
-
+        print(num_responses)
         # Looping through responses getting the answer to the chosen question
-        possible_answers = [] 
+        possible_answers = []
+        answer_ids = []
         for response in all_responses["items"]:
 
             # Getting answer content
@@ -165,6 +166,7 @@ class Typeform:
 
             # For each response get the index of the chosen question
             chosen_index = None
+            
             for answer_num in range(len(answers)):
 
                 answer_id = answers[answer_num]["field"]["id"]
@@ -179,14 +181,15 @@ class Typeform:
             
             answer_content = answers[chosen_index]
             possible_answers.append(answer_content[answer_content["type"]])
+            answer_ids.append(response["landing_id"])
             
-        return possible_answers
+        return possible_answers#, answer_ids
 
 
-# t = Typeform()
-# questions, question_type, question_choices, question_ids = t.get_questions("VUkfEM0w")
-# answers, answer_ids, md = t.get_answers("VUkfEM0w")
-# possible_answers = t.find_matching_form("VUkfEM0w", question_ids[3]) # the question id points to the email 
+#t = Typeform()
+#questions, question_type, question_choices, question_ids = t.get_questions("VUkfEM0w")
+#answers, answer_ids, md = t.get_answers("VUkfEM0w")
+#possible_answers, answer_ids = t.find_matching_form("VUkfEM0w", question_ids[3]) # the question id points to the email 
 """
 # EXAMPLE CALLS
 # init()... will run on import

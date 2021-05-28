@@ -168,17 +168,18 @@ class Application(tk.Frame):
         qType = self.question_type[qIndex]
 
         # get responses to chosen question
-        responses = self.typeform.find_matching_form(self.md["formID"], qID)
-        self.submissionABox.config(choices=responses)
+        self.helperResponses = self.typeform.find_matching_form(self.md["formID"], qID)
+        self.submissionABox.config(choices=self.helperResponses)
         self.submissionABox.pack(padx = 20, pady = 5, fill="both", expand=True)
         
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the response:")
 
     def askForChangeQ(self):
         answer = self.submissionABox.get()
-        # get specific submission based on question and answer
-        # ask user to choose question of the answer field they want to change
+        self.answerIndex = self.helperResponses.index(answer)
         
+        # get specific submission based on question and answer
+        # ask user to choose question of the answer field they want to change        
         self.changeQBox.config(choices=self.questions)
         self.changeQBox.pack(padx = 5, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Choose question field to change")
@@ -187,14 +188,22 @@ class Application(tk.Frame):
         qIndex = self.questions.index(self.changeQBox.get())
         qID = self.question_ids[qIndex]
         qType = self.question_type[qIndex]
+
+        answer = self.typeform.find_matching_form(self.md["formID"], qID)[self.answerIndex]
+        #print(answers)
         
         if qType == 'multiple_choice':
+            print(answer)
             self.changeABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=self.question_choices[qIndex])
             
-        # get current answer to display?
-        # self.changeABox.insert(0,"Current response")
+        
+        # NOTE: This ^ may not work if there are multiple responses.
+        # Have user manually delete a duplicate from typeform first,
+        # that's probably better practice anyways from an operations standpoint.
 
         self.changeABox.pack(padx = 20, pady = 5, fill="both", expand=True)
+        if qType != "multiple_choice":
+            self.changeABox.insert(-1, answer)
         self.stageText.config(text="Change response to (response type is " + qType + "):")
 
         self.nextButton.config(text="Submit", command=self.submit)
