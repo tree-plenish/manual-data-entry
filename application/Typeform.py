@@ -9,7 +9,8 @@ class Typeform:
         # Path to Typeform API Key (Primary works on Tree-Plenish Server)
         if os.path.exists("/home/justinmiller/Desktop/typeformId.txt"):
             key_file = "/home/justinmiller/Desktop/typeformId.txt"
-
+        elif os.path.exists("C:/users/cntaw/desktop/tree plenish/typeformID.txt"):
+            key_file = "C:/users/cntaw/desktop/tree plenish/typeformID.txt"
         else:
             key_file = input("Enter full address of api key text file: ")
 

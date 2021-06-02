@@ -71,7 +71,7 @@ class AutocompleteDropdown(tk.Frame):
                 self._lb.pack_forget()
                 self._scrollbar.pack_forget()
             elif state == "normal":
-                self._lb.pack(side = tk.LEFT, fill = tk.BOTH)
+                self._lb.pack(side = tk.LEFT, fill = tk.BOTH, expand=True)
                 self._scrollbar.pack(side = tk.RIGHT, fill = tk.BOTH)
         tk.Frame.config(self, **options) # check this
 

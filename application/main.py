@@ -86,6 +86,11 @@ class Application(tk.Frame):
             # initialize typeform related widgets
             self.stageText = WrapLabel(self.leftFrame, text="")
             self.formIDBox = AutocompleteDropdown(self.rightFrame,width = 50, choices=[])
+            # load all forms once here (takes a while, and likely will not change if user clicks back button)
+            forms = []
+            for form in self.typeform.get_all_forms():
+                forms.append(form["title"] + ", " + form["id"])
+            self.formIDBox.config(choices=forms)
             self.submissionQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
             self.submissionABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
             self.changeQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
@@ -125,11 +130,6 @@ class Application(tk.Frame):
 
     def prevStage(self):
         if self.stage > 0:
-            if isinstance(self.fields[self.stage], AutocompleteDropdown):
-                if not self.fields[self.stage].verify():
-                    # pop up error
-                    messagebox.showerror("Error", "Please select one of the options listed.")
-                    return
             self.stage -= 1
             self.nextFunc[self.stage]()
         self.fields[self.stage].config(state="normal")
@@ -139,10 +139,6 @@ class Application(tk.Frame):
     def askForFormID(self):
         self.stageText.config(text="Enter Typeform ID")
         self.stageText.pack(padx = 3, pady = 3, fill="both", expand=True)
-        forms = []
-        for form in self.typeform.get_all_forms():
-            forms.append(form["title"] + ", " + form["id"])
-        self.formIDBox.config(choices=forms)
         self.formIDBox.pack(padx = 20, pady = 5, fill="both", expand=True)
 
     def askForSubmissionQ(self):
