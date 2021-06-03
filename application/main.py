@@ -20,7 +20,46 @@ class Application(tk.Frame):
         self.data = {}
 
     def create_widgets(self):
-        self.mainContent = tk.Frame(self.master)
+        ## Scrollbar for window stuff starts here: 
+        ## will make it easier to view multiple modification requests, 
+        ## turns out to be more tedius than expected since tkinter scrollbar 
+        ## can't directly be attached to a frame (need to use Canvas)
+
+        # scrollable canvas and scrollbar
+        scrollable = tk.Canvas(self.master)
+        scrollable.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+
+        scrollbar = ttk.Scrollbar(self.master, orient=tk.VERTICAL, command=scrollable.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # configure scrollable canvas
+        scrollable.configure(yscrollcommand=scrollbar.set)
+
+        innerFrame = tk.Frame(scrollable)
+        scrollable.height = scrollable.winfo_reqheight()
+        scrollable.width = scrollable.winfo_reqwidth()
+        scrollable.create_window((0,0), window=innerFrame, anchor="nw", width=scrollable.width)
+        scrollable.addtag_all("resize")
+        # allow mousewheel to scroll
+        scrollable.bind_all("<MouseWheel>", lambda e: scrollable.yview_scroll(-1 * int((e.delta / 120)), "units"))
+        
+
+        # resize content window width in canvas when window is resized
+        # also attach scroll region to scroll bar
+        def resizeAndSetScroll(e):
+            scrollable.scale("resize",0,0,float(e.width)/scrollable.width,float(e.height)/scrollable.height)
+            scrollable.width = e.width
+            scrollable.height = e.height
+            scrollable.configure(scrollregion=scrollable.bbox("all"))
+        
+        scrollable.bind("<Configure>", resizeAndSetScroll)
+
+        ## End scrollbar for window
+
+        self.label = tk.Label(innerFrame, text = "Tree Plenish Manual Data Entry")
+        self.label.pack()
+
+        self.mainContent = tk.Frame(innerFrame)
         self.mainContent.pack()
         self.mainContent.grid_columnconfigure(0, weight=1, uniform="group1")
         self.mainContent.grid_columnconfigure(1, weight=2, uniform="group1")
@@ -32,11 +71,8 @@ class Application(tk.Frame):
         self.leftFrame.grid(row=0, column=0, sticky="nsew")
         self.rightFrame.grid(row=0, column=1, sticky="nsew")
 
-        self.bottomFrame = tk.Frame(self.master)
+        self.bottomFrame = tk.Frame(innerFrame)
         self.bottomFrame.pack(side=tk.BOTTOM)
-        
-        self.label = tk.Label(self, text = "Tree Plenish Manual Data Entry")
-        self.label.pack()
 
         self.emailLabel = tk.Label(self.leftFrame, text = "Enter your email" )
         self.emailLabel.pack(padx = 5, pady = 5)
@@ -62,6 +98,8 @@ class Application(tk.Frame):
         self.fields = []
         # self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
         # self.submitButton.pack(padx = 3, pady = 3)        
+
+    
 
     def setAdditionalOptions(self, event):
         if self.entryPtDropdown.get() == "" or self.emailEntry.get() == "" or self.typeDropdown.get() == "":

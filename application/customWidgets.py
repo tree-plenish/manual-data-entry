@@ -37,7 +37,7 @@ class AutocompleteDropdown(tk.Frame):
         else:
             data = []
             for item in self._choices:
-                if value.lower() in item.lower():
+                if str(value).lower() in str(item).lower():
                     data.append(item)
         # update data in listbox
         self._updateListbox(data)
