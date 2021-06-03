@@ -26,33 +26,33 @@ class Application(tk.Frame):
         ## can't directly be attached to a frame (need to use Canvas)
 
         # scrollable canvas and scrollbar
-        scrollable = tk.Canvas(self.master, highlightthickness=0)
-        scrollable.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        self.scrollable = tk.Canvas(self.master, highlightthickness=0)
+        self.scrollable.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
-        scrollbar = ttk.Scrollbar(self.master, orient=tk.VERTICAL, command=scrollable.yview)
+        scrollbar = ttk.Scrollbar(self.master, orient=tk.VERTICAL, command=self.scrollable.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # configure scrollable canvas
-        scrollable.configure(yscrollcommand=scrollbar.set)
+        self.scrollable.configure(yscrollcommand=scrollbar.set)
 
-        innerFrame = tk.Frame(scrollable)
-        scrollable.height = scrollable.winfo_reqheight()
-        scrollable.width = scrollable.winfo_reqwidth()
-        scrollable.create_window((0,0), window=innerFrame, anchor="nw", width=scrollable.width)
-        scrollable.addtag_all("resize")
+        innerFrame = tk.Frame(self.scrollable)
+        self.scrollable.height = self.scrollable.winfo_reqheight()
+        self.scrollable.width = self.scrollable.winfo_reqwidth()
+        self.scrollable.create_window((0,0), window=innerFrame, anchor="nw", width=self.scrollable.width)
+        self.scrollable.addtag_all("resize")
         # allow mousewheel to scroll
-        scrollable.bind_all("<MouseWheel>", lambda e: scrollable.yview_scroll(-1 * int((e.delta / 120)), "units"))
+        self.scrollable.bind_all("<MouseWheel>", lambda e: self.scrollable.yview_scroll(-1 * int((e.delta / 120)), "units"))
         
 
         # resize content window width in canvas when window is resized
         # also attach scroll region to scroll bar
         def resizeAndSetScroll(e):
-            scrollable.scale("resize",0,0,float(e.width)/scrollable.width,float(e.height)/scrollable.height)
-            scrollable.width = e.width
-            scrollable.height = e.height
-            scrollable.configure(scrollregion=scrollable.bbox("all"))
+            self.scrollable.scale("resize",0,0,float(e.width)/self.scrollable.width,float(e.height)/self.scrollable.height)
+            self.scrollable.width = e.width
+            self.scrollable.height = e.height
+            self.scrollable.configure(scrollregion=self.scrollable.bbox("all"))
         
-        scrollable.bind("<Configure>", resizeAndSetScroll)
+        self.scrollable.bind("<Configure>", resizeAndSetScroll)
 
         ## End scrollbar for window
 
@@ -107,7 +107,13 @@ class Application(tk.Frame):
             # to do: email validation?
             return
 
-        if self.entryPtDropdown.get() == "Typeform":
+        self.data["email"] = self.emailEntry.get()
+        self.data["type"] = self.typeDropdown.get()
+        self.data["entry_point"] = self.entryPtDropdown.get()
+
+        if self.data["entry_point"] == "Typeform" and self.data["type"] == "Modify":
+            self.requestNum = 0
+            self.data["requests"] = [] # array of changes the user wants to make to a form
 
             self.entryPtDropdown.config(state="disabled")
             self.emailEntry.config(state="disabled")
@@ -180,26 +186,36 @@ class Application(tk.Frame):
         self.formIDBox.pack(padx = 20, pady = 5, fill="both", expand=True)
 
     def askForSubmissionQ(self):
+
         formID = self.formIDBox.get()
 
         # Setting form ID as just the id code used in typeform api
         formID = formID.split(", ")[-1]
 
         # Updating metadata
-        self.md["formID"] = formID
+        self.md["formID"] = formID 
+        # Is self.md for data kept within the program and not sent to the server?
+
+        # Updating data
+        self.data["form_ID"] = formID
+        if len(self.data["requests"]) <= self.requestNum:
+            self.data["requests"].append({})
         
         # Returns list of questions with list of answers from typeform
         self.questions, self.question_type, self.question_choices, self.question_ids = self.typeform.get_questions(formID) # get list of questions from formID
 
         self.submissionQBox.config(choices=self.questions)
         self.submissionQBox.pack(padx = 20, pady = 5, fill="both", expand=True)
-        self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the question:")
+        self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the question (Must be a question with unique answers!):")
 
         
     def askForSubmissionA(self):
         qIndex = self.questions.index(self.submissionQBox.get())
         qID = self.question_ids[qIndex]
         qType = self.question_type[qIndex]
+
+        # Updating data
+        self.data["requests"][self.requestNum]["submission_q"] = qID
 
         # get responses to chosen question
         self.helperResponses = self.typeform.find_matching_form(self.md["formID"], qID)
@@ -211,6 +227,10 @@ class Application(tk.Frame):
     def askForChangeQ(self):
         answer = self.submissionABox.get()
         self.answerIndex = self.helperResponses.index(answer)
+
+        # Updating data
+        self.data["requests"][self.requestNum]["submission_a"] = answer
+        # can we just get the submission ID/number instead of question/answer to send to server?
         
         # get specific submission based on question and answer
         # ask user to choose question of the answer field they want to change        
@@ -218,10 +238,16 @@ class Application(tk.Frame):
         self.changeQBox.pack(padx = 5, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Choose question field to change")
 
+        # if going back a step
+        self.nextButton.config(text="Next", command=None)
+
     def askForChangeA(self):
         qIndex = self.questions.index(self.changeQBox.get())
         qID = self.question_ids[qIndex]
         qType = self.question_type[qIndex]
+
+        # Updating data
+        self.data["requests"][self.requestNum]["change_q"] = qID
 
         answer = self.typeform.find_matching_form(self.md["formID"], qID)[self.answerIndex]
         #print(answers)
@@ -240,26 +266,23 @@ class Application(tk.Frame):
             self.changeABox.insert(-1, answer)
         self.stageText.config(text="Change response to (response type is " + qType + "):")
 
-        self.nextButton.config(text="Submit", command=self.submit)
+        self.nextButton.config(text="Add Request", command=self.addRequest)
+
+    def addRequest(self):
+        # Updating data
+        self.data["requests"][self.requestNum]["change_a"] = self.changeABox.get()
+
+        print(self.data)
+
+        self.requestNum += 1
+        
 
     def submit(self):
-        request = {
-            "email" : self.emailEntry.get(),
-            "type" : self.typeDropdown.get(),
-            "entry_point" : self.entryPtDropdown.get(),
-            "form_id" : self.formIDBox.get(),
-            "submission_q" : self.submissionQBox.get(),
-            "submission_a" : self.submissionABox.get(),
-            "change_q" : self.changeQBox.get(),
-            "change_a" : self.changeABox.get()
-        }
-        print(request)
+        self.confirmation = WrapLabel(self.scrollable, 
+                                    text="Change request received. You will receive an email at " + self.data["email"] + " once the change is processed.")
         self.mainContent.destroy()
         self.bottomFrame.destroy()
-        self.confirmation = WrapLabel(self.master, 
-                                    text="Change request received. You will receive an email at " + request["email"] + " once the change is processed.")
         self.confirmation.pack(fill="both", expand=True)
-
 
 root = tk.Tk()
 app = Application(master=root)
