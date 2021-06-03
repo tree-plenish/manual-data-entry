@@ -26,7 +26,7 @@ class Application(tk.Frame):
         ## can't directly be attached to a frame (need to use Canvas)
 
         # scrollable canvas and scrollbar
-        scrollable = tk.Canvas(self.master)
+        scrollable = tk.Canvas(self.master, highlightthickness=0)
         scrollable.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
         scrollbar = ttk.Scrollbar(self.master, orient=tk.VERTICAL, command=scrollable.yview)
