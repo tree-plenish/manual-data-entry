@@ -125,7 +125,7 @@ class Application(tk.Frame):
             self.prevButton.pack(side = tk.LEFT, padx = 3, pady = 3)
             self.nextButton = tk.Button(self.bottomFrame, text = "Next", command = self.nextStage)
             self.nextButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
-
+            self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.submit)
 
             # initialize typeform related widgets
             self.stageText = WrapLabel(self.leftFrame, text="")
@@ -243,6 +243,7 @@ class Application(tk.Frame):
 
         # if going back a step
         self.nextButton.config(text="Next", command=self.nextStage)
+        self.submitButton.pack_forget()
 
     def askForChangeA(self):
         qIndex = self.questions.index(self.fields[self.requestNum][3].get())
@@ -269,7 +270,8 @@ class Application(tk.Frame):
             self.fields[self.requestNum][4].insert(-1, answer)
         self.stageText.config(text="Change response to (response type is " + qType + "):")
 
-        self.nextButton.config(text="Add Request", command=self.addRequest)
+        self.nextButton.config(text="Add Another Change", command=self.addRequest)
+        self.submitButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
 
     def addRequest(self):
 
@@ -277,12 +279,11 @@ class Application(tk.Frame):
         self.data["requests"][self.requestNum]["change_a"] = self.fields[self.requestNum][4].get()
         self.fields[self.requestNum][4].config(state="disabled")
 
-        print(self.data)
-
+        self.submitButton.pack_forget()
+        self.nextButton.config(text="Next", command=self.nextStage)
         self.requestNum += 1
         self.stage = -1
         self.initializeFields()
-        self.nextButton.config(text="Next", command=self.nextStage)
         self.nextStage()
 
 
@@ -292,6 +293,9 @@ class Application(tk.Frame):
         self.mainContent.destroy()
         self.bottomFrame.destroy()
         self.confirmation.pack(fill="both", expand=True)
+
+        # send data
+        print(self.data)
 
 root = tk.Tk()
 app = Application(master=root)
