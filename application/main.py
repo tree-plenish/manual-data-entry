@@ -129,20 +129,14 @@ class Application(tk.Frame):
 
             # initialize typeform related widgets
             self.stageText = WrapLabel(self.leftFrame, text="")
-            self.formIDBox = AutocompleteDropdown(self.rightFrame,width = 50, choices=[])
-            # load all forms once here (takes a while, and likely will not change if user clicks back button)
-            forms = []
+            # load all forms once here (takes a while, and likely will not change if user clicks back button or requests multiple changes)
+            self.forms = []
             for form in self.typeform.get_all_forms():
-                forms.append(form["title"] + ", " + form["id"])
-            self.formIDBox.config(choices=forms)
-            self.submissionQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
-            self.submissionABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
-            self.changeQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
-            self.changeABox = tk.Entry(self.rightFrame, width = 50)
-            self.fields = [self.formIDBox, self.submissionQBox, self.submissionABox, self.changeQBox, self.changeABox]
+                self.forms.append(form["title"] + ", " + form["id"])
+
+            self.initializeFields()
             
             self.nextStage()
-
 
         else:
             # come back to this later
@@ -157,37 +151,46 @@ class Application(tk.Frame):
             # except:
             #     pass
             return
+    def initializeFields(self):
+        #currently for typeform changes only
+        formIDBox = AutocompleteDropdown(self.rightFrame,width = 50, choices=[])
+        formIDBox.config(choices=self.forms)
+        submissionQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
+        submissionABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
+        changeQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
+        changeABox = tk.Entry(self.rightFrame, width = 50)
+        self.fields.append([formIDBox, submissionQBox, submissionABox, changeQBox, changeABox])
 
     def nextStage(self):
         if self.stage < len(self.nextFunc)-1:
-            if isinstance(self.fields[self.stage], AutocompleteDropdown):
-                if not self.fields[self.stage].verify():
+            if isinstance(self.fields[self.requestNum][self.stage], AutocompleteDropdown):
+                if not self.fields[self.requestNum][self.stage].verify():
                     # pop up error
                     messagebox.showerror("Error", "Please select one of the options listed.")
                     return
             self.stage += 1
             self.nextFunc[self.stage]()
-        self.fields[self.stage].config(state="normal")
+        self.fields[self.requestNum][self.stage].config(state="normal")
         if self.stage > 0:
-            self.fields[self.stage-1].config(state="disabled")
+            self.fields[self.requestNum][self.stage-1].config(state="disabled")
 
 
     def prevStage(self):
         if self.stage > 0:
             self.stage -= 1
             self.nextFunc[self.stage]()
-        self.fields[self.stage].config(state="normal")
+        self.fields[self.requestNum][self.stage].config(state="normal")
         if self.stage < len(self.nextFunc)-1:
-            self.fields[self.stage+1].config(state="disabled")
+            self.fields[self.requestNum][self.stage+1].config(state="disabled")
 
     def askForFormID(self):
         self.stageText.config(text="Enter Typeform ID")
         self.stageText.pack(padx = 3, pady = 3, fill="both", expand=True)
-        self.formIDBox.pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.fields[self.requestNum][0].pack(padx = 20, pady = 5, fill="both", expand=True)
 
     def askForSubmissionQ(self):
 
-        formID = self.formIDBox.get()
+        formID = self.fields[self.requestNum][0].get()
 
         # Setting form ID as just the id code used in typeform api
         formID = formID.split(", ")[-1]
@@ -204,13 +207,13 @@ class Application(tk.Frame):
         # Returns list of questions with list of answers from typeform
         self.questions, self.question_type, self.question_choices, self.question_ids = self.typeform.get_questions(formID) # get list of questions from formID
 
-        self.submissionQBox.config(choices=self.questions)
-        self.submissionQBox.pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.fields[self.requestNum][1].config(choices=self.questions)
+        self.fields[self.requestNum][1].pack(padx = 20, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the question (Must be a question with unique answers!):")
 
         
     def askForSubmissionA(self):
-        qIndex = self.questions.index(self.submissionQBox.get())
+        qIndex = self.questions.index(self.fields[self.requestNum][1].get())
         qID = self.question_ids[qIndex]
         qType = self.question_type[qIndex]
 
@@ -219,13 +222,13 @@ class Application(tk.Frame):
 
         # get responses to chosen question
         self.helperResponses = self.typeform.find_matching_form(self.md["formID"], qID)
-        self.submissionABox.config(choices=self.helperResponses)
-        self.submissionABox.pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.fields[self.requestNum][2].config(choices=self.helperResponses)
+        self.fields[self.requestNum][2].pack(padx = 20, pady = 5, fill="both", expand=True)
         
         self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the response:")
 
     def askForChangeQ(self):
-        answer = self.submissionABox.get()
+        answer = self.fields[self.requestNum][2].get()
         self.answerIndex = self.helperResponses.index(answer)
 
         # Updating data
@@ -234,15 +237,15 @@ class Application(tk.Frame):
         
         # get specific submission based on question and answer
         # ask user to choose question of the answer field they want to change        
-        self.changeQBox.config(choices=self.questions)
-        self.changeQBox.pack(padx = 5, pady = 5, fill="both", expand=True)
+        self.fields[self.requestNum][3].config(choices=self.questions)
+        self.fields[self.requestNum][3].pack(padx = 20, pady = 5, fill="both", expand=True)
         self.stageText.config(text="Choose question field to change")
 
         # if going back a step
-        self.nextButton.config(text="Next", command=None)
+        self.nextButton.config(text="Next", command=self.nextStage)
 
     def askForChangeA(self):
-        qIndex = self.questions.index(self.changeQBox.get())
+        qIndex = self.questions.index(self.fields[self.requestNum][3].get())
         qID = self.question_ids[qIndex]
         qType = self.question_type[qIndex]
 
@@ -254,28 +257,34 @@ class Application(tk.Frame):
         
         if qType == 'multiple_choice':
             print(answer)
-            self.changeABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=self.question_choices[qIndex])
+            self.fields[self.requestNum][4] = AutocompleteDropdown(self.rightFrame, width = 50, choices=self.question_choices[qIndex])
             
         
         # NOTE: This ^ may not work if there are multiple responses.
         # Have user manually delete a duplicate from typeform first,
         # that's probably better practice anyways from an operations standpoint.
 
-        self.changeABox.pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.fields[self.requestNum][4].pack(padx = 20, pady = 5, fill="both", expand=True)
         if qType != "multiple_choice":
-            self.changeABox.insert(-1, answer)
+            self.fields[self.requestNum][4].insert(-1, answer)
         self.stageText.config(text="Change response to (response type is " + qType + "):")
 
         self.nextButton.config(text="Add Request", command=self.addRequest)
 
     def addRequest(self):
+
         # Updating data
-        self.data["requests"][self.requestNum]["change_a"] = self.changeABox.get()
+        self.data["requests"][self.requestNum]["change_a"] = self.fields[self.requestNum][4].get()
+        self.fields[self.requestNum][4].config(state="disabled")
 
         print(self.data)
 
         self.requestNum += 1
-        
+        self.stage = -1
+        self.initializeFields()
+        self.nextButton.config(text="Next", command=self.nextStage)
+        self.nextStage()
+
 
     def submit(self):
         self.confirmation = WrapLabel(self.scrollable, 
