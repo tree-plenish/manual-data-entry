@@ -75,7 +75,7 @@ class Application(tk.Frame):
         self.bottomFrame.pack(side=tk.BOTTOM)
 
         self.emailLabel = tk.Label(self.leftFrame, text = "Enter your email" )
-        self.emailLabel.pack(padx = 5, pady = 5)
+        self.emailLabel.pack(padx = 3, pady = 3)
         self.emailEntry = tk.Entry(self.rightFrame, width=300)
         # self.emailEntry.insert(0,"Example: ")
         self.emailEntry.pack(padx = 20, pady = 5)
@@ -127,8 +127,7 @@ class Application(tk.Frame):
             self.nextButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
             self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.submit)
 
-            # initialize typeform related widgets
-            self.stageText = WrapLabel(self.leftFrame, text="")
+            
             # load all forms once here (takes a while, and likely will not change if user clicks back button or requests multiple changes)
             self.forms = []
             for form in self.typeform.get_all_forms():
@@ -152,6 +151,7 @@ class Application(tk.Frame):
             #     pass
             return
     def initializeFields(self):
+        ttk.Separator(self.rightFrame,orient='horizontal').pack(fill='x', pady=8)
         #currently for typeform changes only
         formIDBox = AutocompleteDropdown(self.rightFrame,width = 50, choices=[])
         formIDBox.config(choices=self.forms)
@@ -159,7 +159,9 @@ class Application(tk.Frame):
         submissionABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
         changeQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
         changeABox = tk.Entry(self.rightFrame, width = 50)
-        self.fields.append([formIDBox, submissionQBox, submissionABox, changeQBox, changeABox])
+
+        stageText = WrapLabel(self.leftFrame, text="")
+        self.fields.append([formIDBox, submissionQBox, submissionABox, changeQBox, changeABox, stageText])
 
     def nextStage(self):
         if self.stage < len(self.nextFunc)-1:
@@ -184,8 +186,8 @@ class Application(tk.Frame):
             self.fields[self.requestNum][self.stage+1].config(state="disabled")
 
     def askForFormID(self):
-        self.stageText.config(text="Enter Typeform ID")
-        self.stageText.pack(padx = 3, pady = 3, fill="both", expand=True)
+        self.fields[self.requestNum][5].config(text="Enter Typeform ID")
+        self.fields[self.requestNum][5].pack(padx = 3, pady = 3, fill="both", expand=True)
         self.fields[self.requestNum][0].pack(padx = 20, pady = 5, fill="both", expand=True)
 
     def askForSubmissionQ(self):
@@ -209,7 +211,7 @@ class Application(tk.Frame):
 
         self.fields[self.requestNum][1].config(choices=self.questions)
         self.fields[self.requestNum][1].pack(padx = 20, pady = 5, fill="both", expand=True)
-        self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the question (Must be a question with unique answers!):")
+        self.fields[self.requestNum][5].config(text="Edit the specific form submission with the following question-response pair. Select the question (Must be a question with unique answers!):")
 
         
     def askForSubmissionA(self):
@@ -225,7 +227,7 @@ class Application(tk.Frame):
         self.fields[self.requestNum][2].config(choices=self.helperResponses)
         self.fields[self.requestNum][2].pack(padx = 20, pady = 5, fill="both", expand=True)
         
-        self.stageText.config(text="Edit the specific form submission with the following question-response pair. Select the response:")
+        self.fields[self.requestNum][5].config(text="Edit the specific form submission with the following question-response pair. Select the response:")
 
     def askForChangeQ(self):
         answer = self.fields[self.requestNum][2].get()
@@ -239,7 +241,7 @@ class Application(tk.Frame):
         # ask user to choose question of the answer field they want to change        
         self.fields[self.requestNum][3].config(choices=self.questions)
         self.fields[self.requestNum][3].pack(padx = 20, pady = 5, fill="both", expand=True)
-        self.stageText.config(text="Choose question field to change")
+        self.fields[self.requestNum][5].config(text="Choose question field to change")
 
         # if going back a step
         self.nextButton.config(text="Next", command=self.nextStage)
@@ -268,8 +270,8 @@ class Application(tk.Frame):
         self.fields[self.requestNum][4].pack(padx = 20, pady = 5, fill="both", expand=True)
         if qType != "multiple_choice":
             self.fields[self.requestNum][4].insert(-1, answer)
-        self.stageText.config(text="Change response to (response type is " + qType + "):")
-
+        self.fields[self.requestNum][5].config(text="Change response to (response type is " + qType + "):")
+        self.fields[self.requestNum][5].pack(padx = 3, pady = 3, fill="both", expand=True)
         self.nextButton.config(text="Add Another Change", command=self.addRequest)
         self.submitButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
 
@@ -280,6 +282,7 @@ class Application(tk.Frame):
         self.fields[self.requestNum][4].config(state="disabled")
 
         self.submitButton.pack_forget()
+        self.fields[self.requestNum][5].pack_forget()
         self.nextButton.config(text="Next", command=self.nextStage)
         self.requestNum += 1
         self.stage = -1
