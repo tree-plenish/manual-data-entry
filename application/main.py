@@ -1,3 +1,5 @@
+# TODO: fix scrollbar bug (doesn't update when more widgets are packed unless user configures window)
+
 import _tkinter
 import tkinter as tk
 from tkinter import ttk
@@ -5,6 +7,7 @@ from tkinter import messagebox
 
 from Typeform import Typeform
 from customWidgets import AutocompleteDropdown, WrapLabel
+from SendFTP import HandleFTP
 
 class Application(tk.Frame):
     def __init__(self, master=None):
@@ -348,6 +351,10 @@ class Application(tk.Frame):
 
         # send data
         print(self.data)
+        ftp = HandleFTP()
+        ftp.transfer_request(self.data)
+        
+        
 
 root = tk.Tk()
 app = Application(master=root)

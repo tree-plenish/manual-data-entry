@@ -5,7 +5,6 @@ To launch the GUI, run `application/main.py` with python. Requires the Tkinter p
 - Topside/GUI currently works for modifying one or more answers in a specific Typeform submission.
 
 ## To Do
-- Send data dict as JSON to server and write server script to process the requested changes.
-- Send confirmation email once changes have been successfully processed.
+- Write server script to process the requested changes and send confirmation email once changes have been successfully processed.
 - Add more functionalities? Do we need add/delete for Typeform? Should we add the ability to change Google Sheets or other data?
 - Make stand-alone executable, probably using PyInstaller.
