@@ -35,10 +35,10 @@ class Application(tk.Frame):
         # configure scrollable canvas
         self.scrollable.configure(yscrollcommand=scrollbar.set)
 
-        innerFrame = tk.Frame(self.scrollable)
+        self.innerFrame = tk.Frame(self.scrollable)
         self.scrollable.height = self.scrollable.winfo_reqheight()
         self.scrollable.width = self.scrollable.winfo_reqwidth()
-        self.scrollable.create_window((0,0), window=innerFrame, anchor="nw", width=self.scrollable.width)
+        self.scrollable.create_window((0,0), window=self.innerFrame, anchor="nw", width=self.scrollable.width)
         self.scrollable.addtag_all("resize")
         # allow mousewheel to scroll
         self.scrollable.bind_all("<MouseWheel>", lambda e: self.scrollable.yview_scroll(-1 * int((e.delta / 120)), "units"))
@@ -56,10 +56,10 @@ class Application(tk.Frame):
 
         ## End scrollbar for window
 
-        self.label = tk.Label(innerFrame, text = "Tree Plenish Manual Data Entry")
+        self.label = tk.Label(self.innerFrame, text = "Tree Plenish Manual Data Entry")
         self.label.pack()
 
-        self.mainContent = tk.Frame(innerFrame)
+        self.mainContent = tk.Frame(self.innerFrame)
         self.mainContent.pack()
         self.mainContent.grid_columnconfigure(0, weight=1, uniform="group1")
         self.mainContent.grid_columnconfigure(1, weight=2, uniform="group1")
@@ -71,7 +71,7 @@ class Application(tk.Frame):
         self.leftFrame.grid(row=0, column=0, sticky="nsew")
         self.rightFrame.grid(row=0, column=1, sticky="nsew")
 
-        self.bottomFrame = tk.Frame(innerFrame)
+        self.bottomFrame = tk.Frame(self.innerFrame)
         self.bottomFrame.pack(side=tk.BOTTOM)
 
         self.emailLabel = tk.Label(self.leftFrame, text = "Enter your email" )
@@ -95,13 +95,16 @@ class Application(tk.Frame):
 
         self.stage = -1
         self.nextFunc = [self.askForFormID, self.askForSubmissionQ, self.askForSubmissionA, self.askForChangeQ, self.askForChangeA, self.submit]
-        self.fields = []
+        self.reqWidgets = []
         # self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
         # self.submitButton.pack(padx = 3, pady = 3)        
 
-    
-
     def setAdditionalOptions(self, event):
+        # for some reason this loading label is not packed until after the typeform loading delay
+        # loadingLabel = WrapLabel(self.innerFrame, text = "Loading..." )
+        # loadingLabel.pack(padx = 3, pady = 3)
+        # print("loading typeform")
+
         if self.entryPtDropdown.get() == "" or self.emailEntry.get() == "" or self.typeDropdown.get() == "":
             messagebox.showerror("Error", "Please fill in all required fields")
             # to do: email validation?
@@ -132,6 +135,7 @@ class Application(tk.Frame):
             self.forms = []
             for form in self.typeform.get_all_forms():
                 self.forms.append(form["title"] + ", " + form["id"])
+            # loadingLabel.pack_forget()
 
             self.initializeFields()
             
@@ -139,60 +143,73 @@ class Application(tk.Frame):
 
         else:
             # come back to this later
-            # try:
-            #     self.formIDLabel.destroy()
-            #     self.formIDEntry.destroy()
-            #     self.scrollbar.destroy()
-            #     self.lb.destroy()
-            #     self.listFrame.destroy()
-            #     self.searchBox.destroy()
-            #     self.getFormButton.destroy()
-            # except:
-            #     pass
+            
             return
     def initializeFields(self):
-        ttk.Separator(self.rightFrame,orient='horizontal').pack(fill='x', pady=8)
-        #currently for typeform changes only
-        formIDBox = AutocompleteDropdown(self.rightFrame,width = 50, choices=[])
-        formIDBox.config(choices=self.forms)
-        submissionQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
-        submissionABox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
-        changeQBox = AutocompleteDropdown(self.rightFrame, width = 50, choices=[])
-        changeABox = tk.Entry(self.rightFrame, width = 50)
+        divider = ttk.Separator(self.innerFrame,orient='horizontal')
+        divider.pack(fill='x', pady=8)
 
-        stageText = WrapLabel(self.leftFrame, text="")
-        self.fields.append([formIDBox, submissionQBox, submissionABox, changeQBox, changeABox, stageText])
+        container = tk.Frame(self.innerFrame)
+        container.pack(fill='x')
+        container.grid_columnconfigure(0, weight=1, uniform="group1")
+        container.grid_columnconfigure(1, weight=2, uniform="group1")
+        container.grid_rowconfigure(0, weight=1)
+
+        leftFrame = tk.Frame(container)
+        rightFrame = tk.Frame(container)
+
+        leftFrame.grid(row=0, column=0, sticky="nsew")
+        rightFrame.grid(row=0, column=1, sticky="nsew")
+
+        #currently for typeform changes only
+        formIDBox = AutocompleteDropdown(rightFrame,width = 50, choices=[])
+        formIDBox.config(choices=self.forms)
+        submissionQBox = AutocompleteDropdown(rightFrame, width = 50, choices=[])
+        submissionABox = AutocompleteDropdown(rightFrame, width = 50, choices=[])
+        changeQBox = AutocompleteDropdown(rightFrame, width = 50, choices=[])
+        changeABox = tk.Entry(rightFrame, width = 50)
+
+        stageText = WrapLabel(leftFrame, text="")
+        deleteButton = tk.Button(leftFrame, text = "Delete")
+        deleteButton.index = self.requestNum
+        deleteButton.config(command = lambda: self.deleteRequest(deleteButton.index)) 
+        deleteButton.pack(side = tk.TOP, padx = 3, pady = 3)
+
+        # list of widgets specific to each additional change request
+        self.reqWidgets.append([formIDBox, submissionQBox, submissionABox, changeQBox, changeABox, # fields
+                                stageText, deleteButton, divider, # other GUI widgets
+                                leftFrame, rightFrame, container]) # layout
 
     def nextStage(self):
         if self.stage < len(self.nextFunc)-1:
-            if isinstance(self.fields[self.requestNum][self.stage], AutocompleteDropdown):
-                if not self.fields[self.requestNum][self.stage].verify():
+            if isinstance(self.reqWidgets[self.requestNum][self.stage], AutocompleteDropdown):
+                if not self.reqWidgets[self.requestNum][self.stage].verify():
                     # pop up error
                     messagebox.showerror("Error", "Please select one of the options listed.")
                     return
             self.stage += 1
             self.nextFunc[self.stage]()
-        self.fields[self.requestNum][self.stage].config(state="normal")
+        self.reqWidgets[self.requestNum][self.stage].config(state="normal")
         if self.stage > 0:
-            self.fields[self.requestNum][self.stage-1].config(state="disabled")
+            self.reqWidgets[self.requestNum][self.stage-1].config(state="disabled")
 
 
     def prevStage(self):
         if self.stage > 0:
             self.stage -= 1
             self.nextFunc[self.stage]()
-        self.fields[self.requestNum][self.stage].config(state="normal")
+        self.reqWidgets[self.requestNum][self.stage].config(state="normal")
         if self.stage < len(self.nextFunc)-1:
-            self.fields[self.requestNum][self.stage+1].config(state="disabled")
+            self.reqWidgets[self.requestNum][self.stage+1].config(state="disabled")
 
     def askForFormID(self):
-        self.fields[self.requestNum][5].config(text="Enter Typeform ID")
-        self.fields[self.requestNum][5].pack(padx = 3, pady = 3, fill="both", expand=True)
-        self.fields[self.requestNum][0].pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.reqWidgets[self.requestNum][5].config(text="Enter Typeform ID")
+        self.reqWidgets[self.requestNum][5].pack(padx = 3, pady = 3, fill="both", expand=True)
+        self.reqWidgets[self.requestNum][0].pack(padx = 20, pady = 5, fill="both", expand=True)
 
     def askForSubmissionQ(self):
 
-        formID = self.fields[self.requestNum][0].get()
+        formID = self.reqWidgets[self.requestNum][0].get()
 
         # Setting form ID as just the id code used in typeform api
         formID = formID.split(", ")[-1]
@@ -209,13 +226,13 @@ class Application(tk.Frame):
         # Returns list of questions with list of answers from typeform
         self.questions, self.question_type, self.question_choices, self.question_ids = self.typeform.get_questions(formID) # get list of questions from formID
 
-        self.fields[self.requestNum][1].config(choices=self.questions)
-        self.fields[self.requestNum][1].pack(padx = 20, pady = 5, fill="both", expand=True)
-        self.fields[self.requestNum][5].config(text="Edit the specific form submission with the following question-response pair. Select the question (Must be a question with unique answers!):")
+        self.reqWidgets[self.requestNum][1].config(choices=self.questions)
+        self.reqWidgets[self.requestNum][1].pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.reqWidgets[self.requestNum][5].config(text="Edit the specific form submission with the following question-response pair. Select the question (Must be a question with unique answers!):")
 
         
     def askForSubmissionA(self):
-        qIndex = self.questions.index(self.fields[self.requestNum][1].get())
+        qIndex = self.questions.index(self.reqWidgets[self.requestNum][1].get())
         qID = self.question_ids[qIndex]
         qType = self.question_type[qIndex]
 
@@ -224,13 +241,13 @@ class Application(tk.Frame):
 
         # get responses to chosen question
         self.helperResponses = self.typeform.find_matching_form(self.md["formID"], qID)
-        self.fields[self.requestNum][2].config(choices=self.helperResponses)
-        self.fields[self.requestNum][2].pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.reqWidgets[self.requestNum][2].config(choices=self.helperResponses)
+        self.reqWidgets[self.requestNum][2].pack(padx = 20, pady = 5, fill="both", expand=True)
         
-        self.fields[self.requestNum][5].config(text="Edit the specific form submission with the following question-response pair. Select the response:")
+        self.reqWidgets[self.requestNum][5].config(text="Edit the specific form submission with the following question-response pair. Select the response:")
 
     def askForChangeQ(self):
-        answer = self.fields[self.requestNum][2].get()
+        answer = self.reqWidgets[self.requestNum][2].get()
         self.answerIndex = self.helperResponses.index(answer)
 
         # Updating data
@@ -239,16 +256,16 @@ class Application(tk.Frame):
         
         # get specific submission based on question and answer
         # ask user to choose question of the answer field they want to change        
-        self.fields[self.requestNum][3].config(choices=self.questions)
-        self.fields[self.requestNum][3].pack(padx = 20, pady = 5, fill="both", expand=True)
-        self.fields[self.requestNum][5].config(text="Choose question field to change")
+        self.reqWidgets[self.requestNum][3].config(choices=self.questions)
+        self.reqWidgets[self.requestNum][3].pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.reqWidgets[self.requestNum][5].config(text="Choose question field to change")
 
         # if going back a step
         self.nextButton.config(text="Next", command=self.nextStage)
         self.submitButton.pack_forget()
 
     def askForChangeA(self):
-        qIndex = self.questions.index(self.fields[self.requestNum][3].get())
+        qIndex = self.questions.index(self.reqWidgets[self.requestNum][3].get())
         qID = self.question_ids[qIndex]
         qType = self.question_type[qIndex]
 
@@ -260,37 +277,69 @@ class Application(tk.Frame):
         
         if qType == 'multiple_choice':
             print(answer)
-            self.fields[self.requestNum][4] = AutocompleteDropdown(self.rightFrame, width = 50, choices=self.question_choices[qIndex])
+            self.reqWidgets[self.requestNum][4] = AutocompleteDropdown(self.reqWidgets[self.requestNum][9], width = 50, choices=self.question_choices[qIndex])
             
         
         # NOTE: This ^ may not work if there are multiple responses.
         # Have user manually delete a duplicate from typeform first,
         # that's probably better practice anyways from an operations standpoint.
 
-        self.fields[self.requestNum][4].pack(padx = 20, pady = 5, fill="both", expand=True)
+        self.reqWidgets[self.requestNum][4].pack(padx = 20, pady = 5, fill="both", expand=True)
         if qType != "multiple_choice":
-            self.fields[self.requestNum][4].insert(-1, answer)
-        self.fields[self.requestNum][5].config(text="Change response to (response type is " + qType + "):")
-        self.fields[self.requestNum][5].pack(padx = 3, pady = 3, fill="both", expand=True)
+            self.reqWidgets[self.requestNum][4].insert(-1, answer)
+        self.reqWidgets[self.requestNum][5].config(text="Change response to (response type is " + qType + "):")
+        self.reqWidgets[self.requestNum][5].pack(padx = 3, pady = 3, fill="both", expand=True)
         self.nextButton.config(text="Add Another Change", command=self.addRequest)
         self.submitButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
 
     def addRequest(self):
-
+        
         # Updating data
-        self.data["requests"][self.requestNum]["change_a"] = self.fields[self.requestNum][4].get()
-        self.fields[self.requestNum][4].config(state="disabled")
+        self.data["requests"][self.requestNum]["change_a"] = self.reqWidgets[self.requestNum][4].get()
+        self.reqWidgets[self.requestNum][4].config(state="disabled")
 
         self.submitButton.pack_forget()
-        self.fields[self.requestNum][5].pack_forget()
+        self.reqWidgets[self.requestNum][5].pack_forget()
         self.nextButton.config(text="Next", command=self.nextStage)
         self.requestNum += 1
         self.stage = -1
         self.initializeFields()
         self.nextStage()
 
-
+    def deleteRequest(self, index):
+        # delete from GUI
+        print(index)
+        self.reqWidgets[index][10].pack_forget() # container
+        self.reqWidgets[index][7].pack_forget() # divider
+        # delete from data dict and adjust requestNum
+        if len(self.data["requests"]) > index:
+            self.data["requests"].pop(index)
+        self.requestNum -= 1
+        # update each deleteButton's associated index
+        for i in range(index, len(self.reqWidgets)):
+            self.reqWidgets[i][6].index -= 1
+        # delete from array of widgets
+        self.reqWidgets.pop(index)
+        # if deleted ALL requests, show initial request form
+        if self.requestNum == -1:
+            self.nextButton.config(text="Next", command=self.nextStage)
+            self.submitButton.pack_forget()
+            self.requestNum = 0
+            self.stage = -1
+            self.initializeFields()
+            self.nextStage()
+        # if deleted last (incomplete) request, but there is still at least one 
+        # request, allow user to submit or add request
+        elif index > self.requestNum:
+            self.nextButton.config(text="Add Another Change", command=self.addRequest)
+            self.nextButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
+            self.submitButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
+            
     def submit(self):
+        # Updating data
+        self.data["requests"][self.requestNum]["change_a"] = self.reqWidgets[self.requestNum][4].get()
+        self.reqWidgets[self.requestNum][4].config(state="disabled")
+
         self.confirmation = WrapLabel(self.scrollable, 
                                     text="Change request received. You will receive an email at " + self.data["email"] + " once the change is processed.")
         self.mainContent.destroy()
