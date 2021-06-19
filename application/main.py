@@ -1,5 +1,3 @@
-# TODO: fix scrollbar bug (doesn't update when more widgets are packed unless user configures window)
-
 import _tkinter
 import tkinter as tk
 from tkinter import ttk
@@ -7,7 +5,7 @@ from tkinter import messagebox
 
 from Typeform import Typeform
 from customWidgets import AutocompleteDropdown, WrapLabel
-from SendFTP import HandleFTP
+# from SendFTP import HandleFTP
 
 class Application(tk.Frame):
     def __init__(self, master=None):
@@ -17,6 +15,7 @@ class Application(tk.Frame):
         self.master.geometry("500x500")
         self.pack()
         self.create_widgets()
+        self.nextFunc = [self.askForFormID, self.askForSubmissionQ, self.askForSubmissionA, self.askForChangeQ, self.askForChangeA, self.submit]
 
         # Setting class variables for request md and data
         self.md = {}
@@ -32,11 +31,11 @@ class Application(tk.Frame):
         self.scrollable = tk.Canvas(self.master, highlightthickness=0)
         self.scrollable.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
-        scrollbar = ttk.Scrollbar(self.master, orient=tk.VERTICAL, command=self.scrollable.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.scrollbar = ttk.Scrollbar(self.master, orient=tk.VERTICAL, command=self.scrollable.yview)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # configure scrollable canvas
-        self.scrollable.configure(yscrollcommand=scrollbar.set)
+        self.scrollable.configure(yscrollcommand=self.scrollbar.set)
 
         self.innerFrame = tk.Frame(self.scrollable)
         self.scrollable.height = self.scrollable.winfo_reqheight()
@@ -56,6 +55,7 @@ class Application(tk.Frame):
             self.scrollable.configure(scrollregion=self.scrollable.bbox("all"))
         
         self.scrollable.bind("<Configure>", resizeAndSetScroll)
+        self.innerFrame.bind("<Configure>", lambda e: self.scrollable.configure(scrollregion=self.scrollable.bbox("all")))
 
         ## End scrollbar for window
 
@@ -97,7 +97,6 @@ class Application(tk.Frame):
         self.entryPtDropdown.bind("<<ComboboxSelected>>", self.setAdditionalOptions)
 
         self.stage = -1
-        self.nextFunc = [self.askForFormID, self.askForSubmissionQ, self.askForSubmissionA, self.askForChangeQ, self.askForChangeA, self.submit]
         self.reqWidgets = []
         # self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
         # self.submitButton.pack(padx = 3, pady = 3)        
@@ -127,16 +126,20 @@ class Application(tk.Frame):
 
             self.typeform = Typeform()
 
+            resetButton = tk.Button(self.bottomFrame, text = "Reset All Fields", command = self.resetWithConfirmation, bg='#cccccc')
+            resetButton.pack(side = tk.LEFT, padx = 3, pady = 3)
             self.prevButton = tk.Button(self.bottomFrame, text = "Back", command = self.prevStage)
             self.prevButton.pack(side = tk.LEFT, padx = 3, pady = 3)
             self.nextButton = tk.Button(self.bottomFrame, text = "Next", command = self.nextStage)
             self.nextButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
             self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.submit)
-
+            
             
             # load all forms once here (takes a while, and likely will not change if user clicks back button or requests multiple changes)
             self.forms = []
-            for form in self.typeform.get_all_forms():
+            # result = self.typeform.get_all_forms()
+            result = [{"title":"form1", "id":"1"},{"title":"form2", "id":"2"},{"title":"form3", "id":"3"}]
+            for form in result:
                 self.forms.append(form["title"] + ", " + form["id"])
             # loadingLabel.pack_forget()
 
@@ -173,7 +176,7 @@ class Application(tk.Frame):
         changeABox = tk.Entry(rightFrame, width = 50)
 
         stageText = WrapLabel(leftFrame, text="")
-        deleteButton = tk.Button(leftFrame, text = "Delete")
+        deleteButton = tk.Button(leftFrame, text = "Delete", bg='#cccccc')
         deleteButton.index = self.requestNum
         deleteButton.config(command = lambda: self.deleteRequest(deleteButton.index)) 
         deleteButton.pack(side = tk.TOP, padx = 3, pady = 3)
@@ -227,7 +230,11 @@ class Application(tk.Frame):
             self.data["requests"].append({})
         
         # Returns list of questions with list of answers from typeform
-        self.questions, self.question_type, self.question_choices, self.question_ids = self.typeform.get_questions(formID) # get list of questions from formID
+        # self.questions, self.question_type, self.question_choices, self.question_ids = self.typeform.get_questions(formID) # get list of questions from formID
+        self.questions = ["question1", "question2", "question3"]
+        self.question_type = ["multiple_choice", "email", "number"]
+        self.question_choices = [["choice1", "choice2", "choice3"], None, None]
+        self.question_ids = ["1", "2", "3"]
 
         self.reqWidgets[self.requestNum][1].config(choices=self.questions)
         self.reqWidgets[self.requestNum][1].pack(padx = 20, pady = 5, fill="both", expand=True)
@@ -243,7 +250,9 @@ class Application(tk.Frame):
         self.data["requests"][self.requestNum]["submission_q"] = qID
 
         # get responses to chosen question
-        self.helperResponses = self.typeform.find_matching_form(self.md["formID"], qID)
+        # self.helperResponses = self.typeform.find_matching_form(self.md["formID"], qID)
+        self.helperResponses = ["A", "B", "C", "D", "E"]
+
         self.reqWidgets[self.requestNum][2].config(choices=self.helperResponses)
         self.reqWidgets[self.requestNum][2].pack(padx = 20, pady = 5, fill="both", expand=True)
         
@@ -275,7 +284,8 @@ class Application(tk.Frame):
         # Updating data
         self.data["requests"][self.requestNum]["change_q"] = qID
 
-        answer = self.typeform.find_matching_form(self.md["formID"], qID)[self.answerIndex]
+        # answer = self.typeform.find_matching_form(self.md["formID"], qID)[self.answerIndex]
+        answer = "Original Answer"
         #print(answers)
         
         if qType == 'multiple_choice':
@@ -289,6 +299,7 @@ class Application(tk.Frame):
 
         self.reqWidgets[self.requestNum][4].pack(padx = 20, pady = 5, fill="both", expand=True)
         if qType != "multiple_choice":
+            self.reqWidgets[self.requestNum][4].delete(0, tk.END)
             self.reqWidgets[self.requestNum][4].insert(-1, answer)
         self.reqWidgets[self.requestNum][5].config(text="Change response to (response type is " + qType + "):")
         self.reqWidgets[self.requestNum][5].pack(padx = 3, pady = 3, fill="both", expand=True)
@@ -337,25 +348,41 @@ class Application(tk.Frame):
             self.nextButton.config(text="Add Another Change", command=self.addRequest)
             self.nextButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
             self.submitButton.pack(side = tk.RIGHT, padx = 3, pady = 3)
-            
+            self.stage = 4
+            self.reqWidgets[self.requestNum][self.stage].config(state="normal")
+            self.nextFunc[self.stage]()
+
     def submit(self):
         # Updating data
         self.data["requests"][self.requestNum]["change_a"] = self.reqWidgets[self.requestNum][4].get()
         self.reqWidgets[self.requestNum][4].config(state="disabled")
 
-        self.confirmation = WrapLabel(self.scrollable, 
+        confirmation = WrapLabel(self.scrollable, 
                                     text="Change request received. You will receive an email at " + self.data["email"] + " once the change is processed.")
+        resetButton = tk.Button(self.scrollable, text = "Submit Another Request", command = self.reset)
+         
         self.mainContent.destroy()
         self.bottomFrame.destroy()
-        self.confirmation.pack(fill="both", expand=True)
+        confirmation.pack(fill="both", expand=True)
+        resetButton.pack(padx = 3, pady = 3)
 
         # send data
         print(self.data)
-        ftp = HandleFTP()
-        ftp.transfer_request(self.data)
+        # ftp = HandleFTP()
+        # ftp.transfer_request(self.data)
         
-        
+    def reset(self):
+        self.scrollable.destroy()
+        self.scrollbar.destroy()
+        self.md = {}
+        self.data = {}
+        self.create_widgets()
 
+    def resetWithConfirmation(self):
+        MsgBox = messagebox.askquestion ('Reset','Are you sure you want to clear all fields?',icon = 'warning')
+        if MsgBox == 'yes':
+            self.reset()
+        
 root = tk.Tk()
 app = Application(master=root)
 app.mainloop() # Triggers GUI
