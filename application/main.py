@@ -1,7 +1,11 @@
+# NOTE: FTP functions are commented out for just application logic without spamming server. 
+# Typeform functions are commented out (using dummy data instead) to test GUI while 
+# Typeform error is being resolved.
 import _tkinter
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import re
 
 from Typeform import Typeform
 from customWidgets import AutocompleteDropdown, WrapLabel
@@ -94,14 +98,16 @@ class Application(tk.Frame):
         self.entryPtDropdown = ttk.Combobox(self.rightFrame, state = "readonly", values = ["Typeform", "Other"])
         self.entryPtDropdown.pack(padx = 20, pady = 3, fill="both", expand=True)
 
-        self.entryPtDropdown.bind("<<ComboboxSelected>>", self.setAdditionalOptions)
+        self.advance = tk.Button(self.bottomFrame, text = "Next", command = self.setAdditionalOptions)
+        self.advance.pack(padx = 3, pady = 3)
+        # self.entryPtDropdown.bind("<<ComboboxSelected>>", self.setAdditionalOptions)
 
         self.stage = -1
         self.reqWidgets = []
         # self.submitButton = tk.Button(self.bottomFrame, text = "Submit", command = self.retrieveData)
         # self.submitButton.pack(padx = 3, pady = 3)        
 
-    def setAdditionalOptions(self, event):
+    def setAdditionalOptions(self):
         # for some reason this loading label is not packed until after the typeform loading delay
         # loadingLabel = WrapLabel(self.innerFrame, text = "Loading..." )
         # loadingLabel.pack(padx = 3, pady = 3)
@@ -109,14 +115,22 @@ class Application(tk.Frame):
 
         if self.entryPtDropdown.get() == "" or self.emailEntry.get() == "" or self.typeDropdown.get() == "":
             messagebox.showerror("Error", "Please fill in all required fields")
-            # to do: email validation?
             return
+
+        # very basic email syntax validation
+        regex = '^[a-zA-Z0-9]+[\._]?[a-zA-Z0-9]+[@]\w+[.]\w{2,3}$'
+        if not re.search(regex, self.emailEntry.get()):
+            messagebox.showerror("Error", "Please enter a valid email")
+            return
+ 
 
         self.data["email"] = self.emailEntry.get()
         self.data["type"] = self.typeDropdown.get()
         self.data["entry_point"] = self.entryPtDropdown.get()
 
         if self.data["entry_point"] == "Typeform" and self.data["type"] == "Modify":
+            self.advance.destroy()
+
             self.requestNum = 0
             self.data["requests"] = [] # array of changes the user wants to make to a form
 
@@ -148,8 +162,8 @@ class Application(tk.Frame):
             self.nextStage()
 
         else:
-            # come back to this later
-            
+            # come back to this later...if we want to add other functionalities.
+            messagebox.showerror("Error", "This application currently only supports Typeform submission modifications")
             return
     def initializeFields(self):
         divider = ttk.Separator(self.innerFrame,orient='horizontal')
@@ -379,7 +393,7 @@ class Application(tk.Frame):
         self.create_widgets()
 
     def resetWithConfirmation(self):
-        MsgBox = messagebox.askquestion ('Reset','Are you sure you want to clear all fields?',icon = 'warning')
+        MsgBox = messagebox.askquestion ('Reset','Are you sure you want to clear all fields and restart this form?',icon = 'warning')
         if MsgBox == 'yes':
             self.reset()
         
