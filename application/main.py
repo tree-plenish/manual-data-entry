@@ -1,5 +1,3 @@
-# TODO: fix scrollbar bug (doesn't update when more widgets are packed unless user configures window)
-
 import _tkinter
 import tkinter as tk
 from tkinter import ttk
@@ -56,6 +54,7 @@ class Application(tk.Frame):
             self.scrollable.configure(scrollregion=self.scrollable.bbox("all"))
         
         self.scrollable.bind("<Configure>", resizeAndSetScroll)
+        self.innerFrame.bind("<Configure>", lambda e: self.scrollable.configure(scrollregion=self.scrollable.bbox("all")))
 
         ## End scrollbar for window
 
