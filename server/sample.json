@@ -1,0 +1,14 @@
+{
+    "email": "example@email.com",
+    "type": "Modify",
+    "entry point": "Typeform",
+    "requests": [
+        {
+            "form_ID": "",
+            "submission_q": "",
+            "submission_a": "",
+            "change_q": "",
+            "change_a": ""
+        }
+    ]
+}
